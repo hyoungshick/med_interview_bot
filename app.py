@@ -215,31 +215,39 @@ for message in st.session_state.messages:
             st.audio(message["audio"], format="audio/mp3")
 
 # --- 입력 처리 (텍스트 OR 오디오) ---
-# 채팅 입력창 바로 위에 오디오 버튼 배치
-st.markdown("### 💬 답변하기")
+# 평가가 완료되었으면 입력창을 숨김 (면접 종료)
+if not st.session_state.get("evaluation"):
+    # 채팅 입력창 바로 위에 오디오 버튼 배치
+    st.markdown("### 💬 답변하기")
 
-audio_bytes = None
-user_input_content = None
+    audio_bytes = None
+    user_input_content = None
 
-if HAS_AUDIO:
-    # mic_recorder는 버튼 형태로 렌더링됨
-    c1, c2 = st.columns([2, 8])
-    with c1:
-        st.write("마이크를 켜고 말씀하세요:")
-    with c2:
-        # 녹음 버튼
-        audio_data = mic_recorder(
-            start_prompt="🎤 녹음 시작",
-            stop_prompt="⏹️ 말하기 완료 (클릭 시 전송)",
-            key='recorder',
-            format="wav",
-             use_container_width=False
-        )
-        if audio_data:
-            audio_bytes = audio_data['bytes']
+    if HAS_AUDIO:
+        # mic_recorder는 버튼 형태로 렌더링됨
+        c1, c2 = st.columns([2, 8])
+        with c1:
+            st.write("마이크를 켜고 말씀하세요:")
+        with c2:
+            # 녹음 버튼
+            audio_data = mic_recorder(
+                start_prompt="🎤 녹음 시작",
+                stop_prompt="⏹️ 말하기 완료 (클릭 시 전송)",
+                key='recorder',
+                format="wav",
+                use_container_width=False
+            )
+            if audio_data:
+                audio_bytes = audio_data['bytes']
 
-# 텍스트 입력 (화면 하단 고정)
-prompt = st.chat_input("텍스트로 답변을 입력하세요...")
+    # 텍스트 입력 (화면 하단 고정)
+    prompt = st.chat_input("텍스트로 답변을 입력하세요...")
+else:
+    # 면접 종료 시 안내
+    st.info("✅ 면접이 종료되었습니다. 아래 평가 결과를 확인해주세요.")
+    audio_bytes = None
+    prompt = None
+    user_input_content = None
 
 # 로직: 오디오가 들어오면 STT -> user_input_content에 할당
 if HAS_AUDIO and audio_bytes:
@@ -256,6 +264,7 @@ if prompt:
     user_input_content = prompt
 
 # --- 봇 응답 생성 및 처리 ---
+# user_input_content가 있을 때만 실행 (평가 완료 시에는 prompt/audio가 None이므로 실행 안 됨)
 if user_input_content:
     # 1. 사용자 메시지 저장
     st.session_state.messages.append({"role": "user", "content": user_input_content})
