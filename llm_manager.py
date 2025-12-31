@@ -132,6 +132,14 @@ def text_to_speech(api_key, text):
 def evaluate_interview(api_key, messages, question_data):
     client = openai.OpenAI(api_key=api_key)
     
+    # 메시지 정제 (오디오 데이터 제외하고 텍스트만 추출)
+    # messages가 [{'role': 'user', 'content': '...', 'audio': b'...'}, ...] 형태일 수 있음.
+    filtered_messages = []
+    for msg in messages:
+        filtered_messages.append(f"{msg['role']}: {msg['content']}")
+    
+    conversation_text = "\n".join(filtered_messages)
+
     # 평가 프롬프트
     prompt = f"""
     당신은 의대 면접 평가관입니다.
@@ -142,7 +150,7 @@ def evaluate_interview(api_key, messages, question_data):
     핵심 평가 요소(Key Points): {question_data.get('key_points')}
     
     [대화 내용]
-    {messages}
+    {conversation_text}
     
     [평가 양식]
     1. 총평 (잘한 점, 아쉬운 점)
