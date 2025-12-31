@@ -139,14 +139,7 @@ with st.sidebar:
 # --- 메인 화면 ---
 st.title("🩺 의대 면접 시뮬레이션")
 
-# [Result] 평가 결과가 있으면 최상단에 표시
-if st.session_state.get("evaluation"):
-    st.info("📊 면접 평가 결과가 도착했습니다!")
-    with st.container(border=True):
-        st.markdown(st.session_state.evaluation)
-    if st.button("평가 닫기 및 계속 대화하기"):
-        st.session_state.evaluation = None
-        st.rerun()
+    # Evaluation used to be displayed here, now moved to bottom
     st.markdown("---")
 
 # [1] 제시문 및 문제 영역 (자기소개 전에는 숨길 수도 있지만, 미리 보여주는 게 나을 수 있음)
@@ -275,12 +268,16 @@ if user_input_content:
     with st.chat_message("assistant"):
         with st.spinner("면접관이 생각 중입니다..."):
             if HAS_LLM and api_key:
+                # 마지막 질문 여부 확인
+                is_last = (st.session_state.current_question_index == len(q_data.get('questions', [])) - 1)
+                
                 # 시나리오 분기
                 response_content = get_ai_response(
                     api_key, 
                     st.session_state.messages, 
                     personality, 
-                    q_data
+                    q_data,
+                    is_last_question=is_last
                 )
                 
                 # 2-2. TTS
@@ -324,3 +321,13 @@ if user_input_content:
                     st.rerun()
                 except Exception as e:
                     st.error(f"Evaluation Error: {e}")
+                    st.error(f"Evaluation Error: {e}")
+
+# --- 평가 결과 표시 (대화 아래로 이동) ---
+if st.session_state.get("evaluation"):
+    st.markdown("---")
+    st.info("📊 면접 평가 결과가 도착했습니다!")
+    with st.container(border=True):
+        st.markdown(st.session_state.evaluation)
+    # 닫기 버튼은 굳이 필요 없을 수도 있지만, 재시험 등을 위해 남겨둘 수 있음.
+    # 하지만 아래에 배치되므로 '닫기'보다는 그냥 보여주는 게 나음.

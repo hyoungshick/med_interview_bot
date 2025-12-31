@@ -75,9 +75,24 @@ def parse_generated_content(text):
     except:
         return {"title": "파싱 에러", "context": text, "questions": ["내용을 확인해주세요."], "key_points": []}
 
-def get_ai_response(api_key, messages, personality, question_data):
+def get_ai_response(api_key, messages, personality, question_data, is_last_question=False):
     client = openai.OpenAI(api_key=api_key)
     
+    # 마지막 질문 여부에 따른 지시사항 분기
+    if is_last_question:
+        instruction_text = """
+        1. 이것이 **마지막 질문**이었습니다.
+        2. 답변에 대해 "잘 들었습니다"라고 짧게 인사하고, "면접이 모두 종료되었습니다."라고 마무리하세요.
+        3. 절대 "다음 질문을 드리겠습니다"라고 말하지 마세요.
+        4. "잠시 후 평가 결과가 제공됩니다"라고 안내하세요.
+        """
+    else:
+        instruction_text = """
+        1. 사용자의 답변에 대해 **절대 꼬리 질문이나 추가 질문을 하지 마세요.**
+        2. 답변 내용을 간단히 확인하고(예: "네, 잘 들었습니다."), **"다음 질문으로 넘어가시려면 버튼을 눌러주세요"**라고 안내하세요.
+        3. 사용자가 직접 버튼을 눌러야 다음으로 넘어간다는 뉘앙스를 주세요.
+        """
+
     system_prompt = f"""
     당신은 의대 면접관입니다. 성격은 '{personality}'입니다.
     
@@ -86,10 +101,7 @@ def get_ai_response(api_key, messages, personality, question_data):
     {question_data.get('questions', '')}
     
     [지시사항]
-    1. 사용자의 답변에 대해 **절대 꼬리 질문이나 추가 질문을 하지 마세요.**
-    2. 답변 내용을 간단히 확인하고 격려하는 말만 짧게 건네세요. (예: "잘 들었습니다.", "답변 감사합니다.")
-    3. 사용자가 다음 질문으로 넘어갈 수 있도록 대기를 유도하세요.
-    4. 2문장 이내로 짧게 답변하세요.
+    {instruction_text}
     """
     
     # 메시지 포맷 변환 (streamlit history -> openai messages)
