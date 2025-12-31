@@ -179,14 +179,6 @@ if not st.session_state.messages:
             
     st.session_state.messages.append(msg_data)
 
-# [2-1] 다음 질문 버튼 (Sidebar or Main)
-# Sidebar에 배치하여 언제든 넘어갈 수 있게 함
-with st.sidebar:
-    st.markdown("---")
-    current_idx = st.session_state.current_question_index
-    total_q = len(q_data['questions'])
-    
-    if current_idx < total_q - 1:
 # Sidebar nav removed
 
 # [3] 대화 표시
