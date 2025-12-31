@@ -141,13 +141,13 @@ with st.expander("📄 제시문 및 문제 보기", expanded=True):
     st.markdown("**질문 목록**")
     questions = q_data.get("questions", [])
     if isinstance(questions, list):
-    # 현재 질문 하이라이트
-    current_idx = st.session_state.current_question_index
-    for idx, q in enumerate(questions):
-        if idx == current_idx:
-            st.markdown(f"**👉 {q}**")
-        else:
-            st.markdown(f"- {q}")
+        # 현재 질문 하이라이트
+        current_idx = st.session_state.current_question_index
+        for idx, q in enumerate(questions):
+            if idx == current_idx:
+                st.markdown(f"**👉 {q}**")
+            else:
+                st.markdown(f"- {q}")
     else:
         st.write(questions)
 
