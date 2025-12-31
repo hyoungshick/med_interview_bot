@@ -187,25 +187,7 @@ with st.sidebar:
     total_q = len(q_data['questions'])
     
     if current_idx < total_q - 1:
-        if st.button("➡️ 다음 질문으로 넘어가기"):
-            st.session_state.current_question_index += 1
-            next_q = q_data['questions'][st.session_state.current_question_index]
-            
-            # 다음 질문 메시지 생성
-            next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
-            msg_data = {"role": "assistant", "content": next_msg_text}
-            
-            if HAS_LLM and api_key:
-                try:
-                    audio_bytes = text_to_speech(api_key, next_msg_text)
-                    msg_data["audio"] = audio_bytes
-                except Exception:
-                    pass
-            
-            st.session_state.messages.append(msg_data)
-            st.rerun()
-    else:
-        st.info("마지막 질문입니다.")
+# Sidebar nav removed
 
 # [3] 대화 표시
 for message in st.session_state.messages:
@@ -219,6 +201,34 @@ for message in st.session_state.messages:
 if not st.session_state.get("evaluation"):
     # 채팅 입력창 바로 위에 오디오 버튼 배치
     st.markdown("### 💬 답변하기")
+
+    # [Next Question Button Logic in Main Area]
+    current_idx = st.session_state.current_question_index
+    total_q = len(q_data['questions'])
+
+    # 마지막 질문이 아니고, 이전 대화가 assistant로 끝났다면(응답 받았으면) -> 다음 질문 버튼 표시
+    # 단, 첫인사 직후나 답변 전엔 표시 안함? -> 사용자가 답변하고, 면접관이 '네 알겠습니다' 한 뒤에 떠야 함.
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+        # 현재 질문에 대한 답변+응답이 오간 상태인지 확인은 심플하게 role만 봐도 됨 (user->assistant 순이므로)
+        
+        if current_idx < total_q - 1:
+            if st.button("➡️ 다음 질문으로 넘어가기", use_container_width=True):
+                st.session_state.current_question_index += 1
+                next_q = q_data['questions'][st.session_state.current_question_index]
+                
+                # 다음 질문 메시지 생성
+                next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
+                msg_data = {"role": "assistant", "content": next_msg_text}
+                
+                if HAS_LLM and api_key:
+                    try:
+                        audio_bytes = text_to_speech(api_key, next_msg_text)
+                        msg_data["audio"] = audio_bytes
+                    except Exception:
+                        pass
+                
+                st.session_state.messages.append(msg_data)
+                st.rerun()
 
     audio_bytes = None
     user_input_content = None
