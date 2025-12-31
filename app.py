@@ -30,11 +30,15 @@ st.set_page_config(
 with st.sidebar:
     st.header("🤖 면접관 설정")
     
-    # 0. API 키 입력
-    default_api_key = st.secrets.get("OPENAI_API_KEY", "")
-    api_key = st.text_input("OpenAI API Key:", value=default_api_key, type="password", placeholder="sk-...")
-    if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key
+    # 0. API 키 설정
+    if "OPENAI_API_KEY" in st.secrets:
+        os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+        api_key = st.secrets["OPENAI_API_KEY"]
+        st.success("✅ API Key가 설정되었습니다.")
+    else:
+        api_key = st.text_input("OpenAI API Key:", type="password", placeholder="sk-...")
+        if api_key:
+            os.environ["OPENAI_API_KEY"] = api_key
 
     # 1. 성격 선택
     personality = st.radio(
