@@ -7,7 +7,7 @@ from questions import QUESTIONS
 # LLM 모듈 임포트
 try:
     # evaluate_interview 임포트 추가
-    from llm_manager import generate_dynamic_question, get_ai_response, transcribe_audio, text_to_speech, evaluate_interview, handle_introduction
+    from llm_manager import generate_dynamic_question, get_ai_response, transcribe_audio, text_to_speech, evaluate_interview
     HAS_LLM = True
 except ImportError as e:
     HAS_LLM = False
@@ -58,7 +58,6 @@ with st.sidebar:
     # 세션 상태 초기화 함수
     def reset_session(new_question=None):
         st.session_state.messages = []
-        st.session_state.intro_done = False # 자기소개 완료 여부
         st.session_state.evaluation = None # 평가 결과 초기화
         if new_question:
             st.session_state.current_question = new_question
@@ -114,7 +113,7 @@ st.title("🩺 의대 면접 시뮬레이션")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
-    st.session_state.intro_done = False
+    st.session_state.messages = []
     st.session_state.evaluation = None
     # 초기: 기출 첫번째
     st.session_state.current_question = QUESTIONS[list(QUESTIONS.keys())[0]]
@@ -147,7 +146,7 @@ with st.expander("📄 제시문 및 문제 보기", expanded=True):
 
 # [2] 첫인사 (자기소개 요청)
 if not st.session_state.messages:
-    welcome_msg = "반갑습니다. 면접을 시작하기에 앞서, 간단하게 자기소개를 부탁드립니다."
+    welcome_msg = "반갑습니다. 제시된 문제를 읽고 본인의 생각을 말씀해 주세요."
     msg_data = {"role": "assistant", "content": welcome_msg}
     
     # TTS 생성 (첫 인사도 음성으로)
@@ -224,22 +223,12 @@ if user_input_content:
         with st.spinner("면접관이 생각 중입니다..."):
             if HAS_LLM and api_key:
                 # 시나리오 분기
-                if not st.session_state.intro_done:
-                    # 자기소개 단계
-                    # AI가 자기소개를 받고 -> 메인 문제로 넘어가도록 유도
-                    # 간단한 시스템 프롬프트 포장
-                    # 자기소개 단계
-                    # AI가 자기소개를 받고 -> 메인 문제로 넘어가도록 유도
-                    response_content = handle_introduction(api_key, personality, user_input_content)
-                    st.session_state.intro_done = True
-                else:
-                    # 메인 질문 단계
-                    response_content = get_ai_response(
-                        api_key, 
-                        st.session_state.messages, 
-                        personality, 
-                        q_data
-                    )
+                response_content = get_ai_response(
+                    api_key, 
+                    st.session_state.messages, 
+                    personality, 
+                    q_data
+                )
                 
                 # 2-2. TTS
                 try:
@@ -250,8 +239,6 @@ if user_input_content:
             else:
                 time.sleep(1)
                 response_content = f"[Mock] API Key가 없습니다. ('{user_input_content}' 수신)"
-                if not st.session_state.intro_done:
-                    st.session_state.intro_done = True
             
             # 텍스트 표시
             st.write(response_content)
