@@ -40,6 +40,10 @@ if "messages" not in st.session_state:
     # 성격 무작위 선택 (0, 1, 2 중 하나)
     st.session_state.personality_index = random.randint(0, 2)
 
+# 안전장치: 기존 세션에 personality_index가 없을 경우 추가
+if "personality_index" not in st.session_state:
+    st.session_state.personality_index = random.randint(0, 2)
+
 q_data = st.session_state.current_question
 
 # --- 사이드바: 설정 ---
