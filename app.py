@@ -139,8 +139,8 @@ with st.sidebar:
 # --- 메인 화면 ---
 st.title("🩺 의대 면접 시뮬레이션")
 
-    # Evaluation used to be displayed here, now moved to bottom
-    st.markdown("---")
+# Evaluation used to be displayed here, now moved to bottom
+st.markdown("---")
 
 # [1] 제시문 및 문제 영역 (자기소개 전에는 숨길 수도 있지만, 미리 보여주는 게 나을 수 있음)
 # 일단 항상 보여줌
@@ -310,7 +310,7 @@ if user_input_content:
     if current_idx == total_q - 1:
         # 자동 평가 실행
         if HAS_LLM and api_key:
-             with st.spinner("모든 질문이 완료되었습니다. 면접관이 평가서를 작성 중입니다... (약 10초 소요)"):
+            with st.spinner("모든 질문이 완료되었습니다. 면접관이 평가서를 작성 중입니다... (약 10초 소요)"):
                 try:
                     eval_result = evaluate_interview(
                         api_key, 
@@ -320,7 +320,6 @@ if user_input_content:
                     st.session_state.evaluation = eval_result
                     st.rerun()
                 except Exception as e:
-                    st.error(f"Evaluation Error: {e}")
                     st.error(f"Evaluation Error: {e}")
 
 # --- 평가 결과 표시 (대화 아래로 이동) ---
