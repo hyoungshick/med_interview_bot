@@ -44,14 +44,25 @@ def parse_markdown(file_path):
             # context cleanup: remove > and spaces
             cleaned_context = []
             for line in current_context:
-                if line.strip().startswith(">"):
-                    cleaned_context.append(line.strip().lstrip("> ").strip())
-                elif line.strip():
-                    cleaned_context.append(line.strip())
+                line_clean = line.strip()
+                if line_clean.startswith(">"):
+                    line_clean = line_clean.lstrip("> ").strip()
+                
+                # Convert **[제시문 X]** or **제시문** to ### Headers
+                if line_clean.startswith("**[제시문") or line_clean.startswith("**제시문"):
+                    # Remove trailing ** if present
+                    if line_clean.endswith("**"):
+                        line_clean = line_clean[:-2]
+                    # Remove leading **
+                    line_clean = line_clean.replace("**", "")
+                    # Add Header
+                    line_clean = f"### {line_clean}"
+
+                cleaned_context.append(line_clean)
             
             questions_db[key] = {
                 "title": f"{current_year} {current_part} - {title_clean}",
-                "context": "\n".join(cleaned_context).strip(),
+                "context": "\n\n".join(cleaned_context).strip(),
                 "questions": list(current_questions),
                 "key_points": [
                     "문제의 핵심 쟁점 파악 능력",
