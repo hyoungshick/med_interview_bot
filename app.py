@@ -27,6 +27,21 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- 상태 초기화 (사이드바 렌더링 전) ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+    st.session_state.evaluation = None
+    st.session_state.current_question_index = 0
+    
+    # 초기: 기출 문제 중 무작위 선택
+    random_key = random.choice(list(QUESTIONS.keys()))
+    st.session_state.current_question = QUESTIONS[random_key]
+    
+    # 성격 무작위 선택 (0, 1, 2 중 하나)
+    st.session_state.personality_index = random.randint(0, 2)
+
+q_data = st.session_state.current_question
+
 # --- 사이드바: 설정 ---
 with st.sidebar:
     st.header("🤖 면접관 설정")
@@ -45,7 +60,7 @@ with st.sidebar:
     personality = st.radio(
         "면접관 성격:",
         ("냉철하고 압박하는 스타일", "친절하고 격려하는 스타일", "논리적이고 사실 중심 스타일"),
-        index=0
+        index=st.session_state.personality_index
     )
     
     st.markdown("---")
@@ -60,8 +75,16 @@ with st.sidebar:
         st.session_state.messages = []
         st.session_state.evaluation = None # 평가 결과 초기화
         st.session_state.current_question_index = 0
+        
+        # 성격도 다시 랜덤 (원한다면) - UX상 리셋시 모든게 바뀌는게 자연스러움
+        st.session_state.personality_index = random.randint(0, 2)
+        
         if new_question:
             st.session_state.current_question = new_question
+        else:
+             # 기출 문제 중 무작위 재선택
+            random_key = random.choice(list(QUESTIONS.keys()))
+            st.session_state.current_question = QUESTIONS[random_key]
     
     with tab1:
         question_category = st.selectbox(
@@ -111,17 +134,6 @@ with st.sidebar:
 
 # --- 메인 화면 ---
 st.title("🩺 의대 면접 시뮬레이션")
-
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-    st.session_state.messages = []
-    st.session_state.evaluation = None
-    st.session_state.current_question_index = 0
-    # 초기: 기출 문제 중 무작위 선택
-    random_key = random.choice(list(QUESTIONS.keys()))
-    st.session_state.current_question = QUESTIONS[random_key]
-
-q_data = st.session_state.current_question
 
 # [Result] 평가 결과가 있으면 최상단에 표시
 if st.session_state.get("evaluation"):
