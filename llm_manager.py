@@ -141,24 +141,32 @@ def evaluate_interview(api_key, messages, question_data):
     conversation_text = "\n".join(filtered_messages)
 
     # 평가 프롬프트
+    questions_text = "\n".join(question_data.get('questions', []))
+    
     prompt = f"""
     당신은 의대 면접 평가관입니다.
     지원자와 면접관의 대화 내용을 바탕으로 지원자를 평가해주세요.
     
     [문제 정보]
     제목: {question_data.get('title')}
+    제시문: {question_data.get('context')}
+    질문 목록:
+    {questions_text}
+    
     핵심 평가 요소(Key Points): {question_data.get('key_points')}
     
     [대화 내용]
     {conversation_text}
     
     [평가 양식]
-    1. 총평 (잘한 점, 아쉬운 점)
+    1. 질문별 상세 평가 (각 질문에 대한 답변 분석)
+       - 질문 1: ...
+       - 질문 2: ...
     2. 항목별 점수 (10점 만점)
        - 논리적 사고력: ?/10
        - 윤리적 판단력: ?/10
        - 소통 능력 및 태도: ?/10
-    3. 종합 조언
+    3. 종합 총평 및 조언
     """
     
     try:

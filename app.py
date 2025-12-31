@@ -59,6 +59,7 @@ with st.sidebar:
     def reset_session(new_question=None):
         st.session_state.messages = []
         st.session_state.evaluation = None # 평가 결과 초기화
+        st.session_state.current_question_index = 0
         if new_question:
             st.session_state.current_question = new_question
     
@@ -115,6 +116,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.messages = []
     st.session_state.evaluation = None
+    st.session_state.current_question_index = 0
     # 초기: 기출 첫번째
     st.session_state.current_question = QUESTIONS[list(QUESTIONS.keys())[0]]
 
@@ -139,14 +141,20 @@ with st.expander("📄 제시문 및 문제 보기", expanded=True):
     st.markdown("**질문 목록**")
     questions = q_data.get("questions", [])
     if isinstance(questions, list):
-        for q in questions:
+    # 현재 질문 하이라이트
+    current_idx = st.session_state.current_question_index
+    for idx, q in enumerate(questions):
+        if idx == current_idx:
+            st.markdown(f"**👉 {q}**")
+        else:
             st.markdown(f"- {q}")
     else:
         st.write(questions)
 
-# [2] 첫인사 (자기소개 요청)
+# [2] 첫인사 (첫 번째 질문 제시)
 if not st.session_state.messages:
-    welcome_msg = "반갑습니다. 제시된 문제를 읽고 본인의 생각을 말씀해 주세요."
+    first_q = q_data['questions'][0]
+    welcome_msg = f"반갑습니다. 면접을 시작하겠습니다. 첫 번째 질문입니다.\n\n{first_q}"
     msg_data = {"role": "assistant", "content": welcome_msg}
     
     # TTS 생성 (첫 인사도 음성으로)
@@ -160,6 +168,34 @@ if not st.session_state.messages:
             pass # API 키 오류 등으로 생성 못해도 텍스트는 보여줌
             
     st.session_state.messages.append(msg_data)
+
+# [2-1] 다음 질문 버튼 (Sidebar or Main)
+# Sidebar에 배치하여 언제든 넘어갈 수 있게 함
+with st.sidebar:
+    st.markdown("---")
+    current_idx = st.session_state.current_question_index
+    total_q = len(q_data['questions'])
+    
+    if current_idx < total_q - 1:
+        if st.button("➡️ 다음 질문으로 넘어가기"):
+            st.session_state.current_question_index += 1
+            next_q = q_data['questions'][st.session_state.current_question_index]
+            
+            # 다음 질문 메시지 생성
+            next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
+            msg_data = {"role": "assistant", "content": next_msg_text}
+            
+            if HAS_LLM and api_key:
+                try:
+                    audio_bytes = text_to_speech(api_key, next_msg_text)
+                    msg_data["audio"] = audio_bytes
+                except Exception:
+                    pass
+            
+            st.session_state.messages.append(msg_data)
+            st.rerun()
+    else:
+        st.info("마지막 질문입니다.")
 
 # [3] 대화 표시
 for message in st.session_state.messages:
