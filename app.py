@@ -6,7 +6,8 @@ from questions import QUESTIONS
 
 # LLM 모듈 임포트
 try:
-    from llm_manager import generate_dynamic_question, get_ai_response, transcribe_audio, text_to_speech
+    # evaluate_interview 임포트 추가
+    from llm_manager import generate_dynamic_question, get_ai_response, transcribe_audio, text_to_speech, evaluate_interview
     HAS_LLM = True
 except ImportError as e:
     HAS_LLM = False
@@ -58,6 +59,7 @@ with st.sidebar:
     def reset_session(new_question=None):
         st.session_state.messages = []
         st.session_state.intro_done = False # 자기소개 완료 여부
+        st.session_state.evaluation = None # 평가 결과 초기화
         if new_question:
             st.session_state.current_question = new_question
     
@@ -85,7 +87,25 @@ with st.sidebar:
                         st.rerun()
 
     st.markdown("---")
-    if st.button("대화 초기화"):
+    
+    # 3. 평가 및 초기화
+    if st.button("🏁 면접 종료 및 평가받기"):
+        if not st.session_state.messages:
+             st.warning("대화 내용이 없습니다.")
+        elif not api_key:
+             st.error("API Key가 필요합니다.")
+        else:
+            with st.spinner("면접관이 평가서를 작성하고 있습니다... (약 10초 소요)"):
+                # 평가 로직 실행
+                eval_result = evaluate_interview(
+                    api_key, 
+                    st.session_state.messages, 
+                    st.session_state.current_question
+                )
+                st.session_state.evaluation = eval_result
+                st.rerun() # 리런해서 메인 화면에 뿌림
+
+    if st.button("🔄 대화 초기화"):
         reset_session()
         st.rerun()
 
@@ -95,10 +115,21 @@ st.title("🩺 의대 면접 시뮬레이션")
 if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.intro_done = False
+    st.session_state.evaluation = None
     # 초기: 기출 첫번째
     st.session_state.current_question = QUESTIONS[list(QUESTIONS.keys())[0]]
 
 q_data = st.session_state.current_question
+
+# [Result] 평가 결과가 있으면 최상단에 표시
+if st.session_state.get("evaluation"):
+    st.info("📊 면접 평가 결과가 도착했습니다!")
+    with st.container(border=True):
+        st.markdown(st.session_state.evaluation)
+    if st.button("평가 닫기 및 계속 대화하기"):
+        st.session_state.evaluation = None
+        st.rerun()
+    st.markdown("---")
 
 # [1] 제시문 및 문제 영역 (자기소개 전에는 숨길 수도 있지만, 미리 보여주는 게 나을 수 있음)
 # 일단 항상 보여줌
