@@ -159,3 +159,16 @@ def evaluate_interview(api_key, messages, question_data):
                   {"role": "user", "content": prompt}]
     )
     return response.choices[0].message.content
+
+def handle_introduction(api_key, personality, user_input):
+    client = openai.OpenAI(api_key=api_key)
+    system_prompt = f"당신은 의대 면접관입니다. 성격: {personality}. 방금 지원자가 자기소개를 했습니다. 이에 대해 짧게 인사를 건네고, 바로 제시된 문제에 대한 본인의 생각을 말해보라고 지시하세요."
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_input}
+        ]
+    )
+    return response.choices[0].message.content

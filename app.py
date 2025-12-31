@@ -7,7 +7,7 @@ from questions import QUESTIONS
 # LLM 모듈 임포트
 try:
     # evaluate_interview 임포트 추가
-    from llm_manager import generate_dynamic_question, get_ai_response, transcribe_audio, text_to_speech, evaluate_interview
+    from llm_manager import generate_dynamic_question, get_ai_response, transcribe_audio, text_to_speech, evaluate_interview, handle_introduction
     HAS_LLM = True
 except ImportError as e:
     HAS_LLM = False
@@ -228,19 +228,9 @@ if user_input_content:
                     # 자기소개 단계
                     # AI가 자기소개를 받고 -> 메인 문제로 넘어가도록 유도
                     # 간단한 시스템 프롬프트 포장
-                    t_msg = [
-                        {"role": "system", "content": f"당신은 의대 면접관입니다. 성격: {personality}. 방금 지원자가 자기소개를 했습니다. 이에 대해 짧게 인사를 건네고, 바로 제시된 문제에 대한 본인의 생각을 말해보라고 지시하세요."},
-                        {"role": "user", "content": user_input_content}
-                    ]
-                    # 직접 호출 (get_ai_response는 문제 문맥을 너무 강하게 넣으므로 별도 처리 혹은 get_ai_response 수정)
-                    # 여기서는 간단히 직접 호출 구현
-                    from openai import OpenAI
-                    client = OpenAI(api_key=api_key)
-                    completion = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=t_msg
-                    )
-                    response_content = completion.choices[0].message.content
+                    # 자기소개 단계
+                    # AI가 자기소개를 받고 -> 메인 문제로 넘어가도록 유도
+                    response_content = handle_introduction(api_key, personality, user_input_content)
                     st.session_state.intro_done = True
                 else:
                     # 메인 질문 단계
