@@ -304,3 +304,23 @@ if user_input_content:
     if response_audio:
         msg_data["audio"] = response_audio
     st.session_state.messages.append(msg_data)
+
+    # [Auto-Evaluation] 마지막 질문에 대한 답변까지 완료되었는지 확인
+    total_q = len(q_data.get('questions', []))
+    current_idx = st.session_state.current_question_index
+    
+    # 지금 Index가 마지막 질문이고, 방금 봇이 다소곳이(ack) 대답했으므로 인터뷰 종료로 간주
+    if current_idx == total_q - 1:
+        # 자동 평가 실행
+        if HAS_LLM and api_key:
+             with st.spinner("모든 질문이 완료되었습니다. 면접관이 평가서를 작성 중입니다... (약 10초 소요)"):
+                try:
+                    eval_result = evaluate_interview(
+                        api_key, 
+                        st.session_state.messages, 
+                        st.session_state.current_question
+                    )
+                    st.session_state.evaluation = eval_result
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Evaluation Error: {e}")
