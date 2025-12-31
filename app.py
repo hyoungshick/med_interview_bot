@@ -117,8 +117,9 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
     st.session_state.evaluation = None
     st.session_state.current_question_index = 0
-    # 초기: 기출 첫번째
-    st.session_state.current_question = QUESTIONS[list(QUESTIONS.keys())[0]]
+    # 초기: 기출 문제 중 무작위 선택
+    random_key = random.choice(list(QUESTIONS.keys()))
+    st.session_state.current_question = QUESTIONS[random_key]
 
 q_data = st.session_state.current_question
 
