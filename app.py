@@ -199,11 +199,14 @@ if not st.session_state.messages:
 # Sidebar nav removed
 
 # [3] 대화 표시
-for message in st.session_state.messages:
+# [3] 대화 표시
+for idx, message in enumerate(st.session_state.messages):
     with st.chat_message(message["role"]):
         st.write(message["content"])
         if "audio" in message:
-            st.audio(message["audio"], format="audio/mp3")
+            # 가장 최근 메시지만 자동 재생 (autoplay=True)
+            is_last = (idx == len(st.session_state.messages) - 1)
+            st.audio(message["audio"], format="audio/mp3", autoplay=is_last)
 
 # --- 입력 처리 (텍스트 OR 오디오) ---
 # 평가가 완료되었으면 입력창을 숨김 (면접 종료)
