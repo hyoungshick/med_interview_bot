@@ -192,62 +192,72 @@ for message in st.session_state.messages:
 # 평가가 완료되었으면 입력창을 숨김 (면접 종료)
 # 평가가 완료되었으면 입력창을 숨김 (면접 종료)
 # Dynamic Container for Input Area
+
+# Dynamic Container for Input Area or Next Button
 input_container = st.empty()
 
 if not st.session_state.get("evaluation"):
+    # Determine state: Can we move to next question?
+    # Logic: If last message is assistant (ack) and we are not at end, show Next Button.
+    # Otherwise, show Input.
+    
+    current_idx = st.session_state.current_question_index
+    total_q = len(q_data['questions'])
+    
+    show_next_button = False
+    
+    if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
+         if current_idx < total_q - 1:
+             show_next_button = True
+    
     with input_container.container():
-        # 채팅 입력창 바로 위에 오디오 버튼 배치
-        st.markdown("### 💬 답변하기")
-
-        # [Next Question Button Logic in Main Area]
-        current_idx = st.session_state.current_question_index
-        total_q = len(q_data['questions'])
-
-        # 마지막 질문이 아니고, 이전 대화가 assistant로 끝났다면(응답 받았으면) -> 다음 질문 버튼 표시
-        # 단, 첫인사 직후나 답변 전엔 표시 안함? -> 사용자가 답변하고, 면접관이 '네 알겠습니다' 한 뒤에 떠야 함.
-        if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
-            # 현재 질문에 대한 답변+응답이 오간 상태인지 확인은 심플하게 role만 봐도 됨 (user->assistant 순이므로)
+        if show_next_button:
+            # [CASE 1] Show Next Question Button (at the bottom, replacing input)
+            st.info("💡 답변이 완료되었습니다. 다음 질문으로 넘어가주세요.")
+            if st.button("➡️ 다음 질문으로 넘어가기", use_container_width=True, type="primary"):
+                st.session_state.current_question_index += 1
+                next_q = q_data['questions'][st.session_state.current_question_index]
+                
+                # 다음 질문 메시지 생성
+                next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
+                msg_data = {"role": "assistant", "content": next_msg_text}
+                
+                if HAS_LLM and api_key:
+                    try:
+                        audio_bytes = text_to_speech(api_key, next_msg_text)
+                        msg_data["audio"] = audio_bytes
+                    except Exception:
+                        pass
+                
+                st.session_state.messages.append(msg_data)
+                st.rerun()
+        
+        else:
+            # [CASE 2] Show Input Controls (Audio/Text)
+            # 채팅 입력창 바로 위에 오디오 버튼 배치
+            st.markdown("### 💬 답변하기")
             
-            if current_idx < total_q - 1:
-                if st.button("➡️ 다음 질문으로 넘어가기", use_container_width=True):
-                    st.session_state.current_question_index += 1
-                    next_q = q_data['questions'][st.session_state.current_question_index]
-                    
-                    # 다음 질문 메시지 생성
-                    next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
-                    msg_data = {"role": "assistant", "content": next_msg_text}
-                    
-                    if HAS_LLM and api_key:
-                        try:
-                            audio_bytes = text_to_speech(api_key, next_msg_text)
-                            msg_data["audio"] = audio_bytes
-                        except Exception:
-                            pass
-                    
-                    st.session_state.messages.append(msg_data)
-                    st.rerun()
+            audio_bytes = None
+            user_input_content = None
 
-        audio_bytes = None
-        user_input_content = None
+            if HAS_AUDIO:
+                # mic_recorder는 버튼 형태로 렌더링됨
+                c1, c2 = st.columns([2, 8])
+                with c1:
+                    st.write("마이크를 켜고 말씀하세요:")
+                with c2:
+                    # 녹음 버튼
+                    audio_data = mic_recorder(
+                        start_prompt="🎤 녹음 시작",
+                        stop_prompt="⏹️ 말하기 완료 (클릭 시 전송)",
+                        key='recorder',
+                        format="wav",
+                        use_container_width=False
+                    )
+                    if audio_data:
+                        audio_bytes = audio_data['bytes']
 
-        if HAS_AUDIO:
-            # mic_recorder는 버튼 형태로 렌더링됨
-            c1, c2 = st.columns([2, 8])
-            with c1:
-                st.write("마이크를 켜고 말씀하세요:")
-            with c2:
-                # 녹음 버튼
-                audio_data = mic_recorder(
-                    start_prompt="🎤 녹음 시작",
-                    stop_prompt="⏹️ 말하기 완료 (클릭 시 전송)",
-                    key='recorder',
-                    format="wav",
-                    use_container_width=False
-                )
-                if audio_data:
-                    audio_bytes = audio_data['bytes']
-
-        # 텍스트 입력 (화면 하단 고정)
+            # 텍스트 입력 (화면 하단 고정)
         prompt = st.chat_input("텍스트로 답변을 입력하세요...")
 else:
     # 면접 종료 시 안내 (Evaluation block will show result below)

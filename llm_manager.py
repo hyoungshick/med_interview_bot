@@ -182,6 +182,7 @@ def evaluate_interview(api_key, messages, question_data):
     - 논리적 추론 및 분석: ?/30
     - 응용력 및 통합적 사고: ?/20
     - 의사소통능력: ?/20
+    - **총점 (Total Score)**: ?/100
     """
     else:
         criteria_text = """
@@ -205,6 +206,7 @@ def evaluate_interview(api_key, messages, question_data):
     - 논리적 사고력: ?/30
     - 의사소통능력: ?/20
     - 상황 대처 및 유연성: ?/20
+    - **총점 (Total Score)**: ?/100
     """
 
     prompt = f"""
@@ -237,8 +239,10 @@ def evaluate_interview(api_key, messages, question_data):
     2. **항목별 점수 (100점 만점 환산)**
     {score_fields}
        
-    3. **종합 총평 및 고득점을 위한 조언**
-       - 단순히 정답을 맞추는 것이 아니라, 차별화된 고득점 포인트(통찰력, 연결성 등)를 중심으로 조언해주세요.
+       
+    3. **종합 총평 및 고득점을 위한 조언 (Punchline Advice)**
+       - 강점과 약점 분석
+       - **[고득점 전략 Punchline]**: 다음 면접에서 더 높은 점수를 받기 위해 꼭 기억해야 할 핵심 조언 한 문장 (예: "답변의 논리는 좋으나, 환자의 고통에 대한 공감을 먼저 표현하는 것이 더 중요합니다.")
        
     4. **최종 합격 여부 (Pass/Fail)**
        - 판단: [Pass / Fail / Borderline]
