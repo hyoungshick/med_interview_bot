@@ -61,11 +61,28 @@ with st.sidebar:
             os.environ["OPENAI_API_KEY"] = api_key
 
     # 1. 성격 선택
-    personality = st.radio(
+    personality_map = {
+        0: "냉철하고 압박하는 스타일",
+        1: "친절하고 격려하는 스타일",
+        2: "논리적이고 사실 중심 스타일"
+    }
+
+    voice_map = {
+        0: "onyx",
+        1: "shimmer",
+        2: "alloy"
+    }
+    
+    selected_p_index = st.radio(
         "면접관 성격:",
-        ("냉철하고 압박하는 스타일", "친절하고 격려하는 스타일", "논리적이고 사실 중심 스타일"),
+        [0, 1, 2],
+        format_func=lambda x: personality_map[x],
         index=st.session_state.personality_index
     )
+    
+    st.session_state.personality_index = selected_p_index
+    personality = personality_map[selected_p_index]
+    current_voice = voice_map[selected_p_index]
     
     st.markdown("---")
     
@@ -242,8 +259,6 @@ if not st.session_state.get("evaluation"):
         else:
             # [CASE 2] Show Input Controls (Audio/Text)
             # 채팅 입력창 바로 위에 오디오 버튼 배치
-            st.markdown("### 💬 답변하기")
-            
             st.markdown("### 💬 답변하기")
             
             # audio_bytes = None # Removed redundancy
