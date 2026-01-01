@@ -6,7 +6,7 @@ from questions import QUESTIONS
 GEN_SYSTEM_PROMPT = """
 당신은 연세대학교 의과대학 입시 면접 문제 출제 위원입니다.
 제공된 예시 문제(problem.md 스타일)와 유사한 수준, 형식의 '새로운 면접 문제'를 하나 출제해야 합니다.
-형식은 JSON처럼 파싱하기 쉽게 '---' 로 구분하여 [제목/상황], [제시문], [질문] 순서로 출력하세요.
+형식은 JSON처럼 파싱하기 쉽게 '---' 로 구분하여 [제목/상황], [제시문], [질문 목록], [평가 기준] 순서로 출력하세요.
 
 주제는 '{topic}' 관련이어야 합니다.
 **특히 가능하다면 다음의 '연세대 의대 특화 키워드'를 문제 상황이나 제시문에 자연스럽게 녹여내세요:**
@@ -16,6 +16,16 @@ GEN_SYSTEM_PROMPT = """
 4. AI 기반 정밀 의료 (AI-based Precision Medicine)
 
 난이도는 고등학생 수준에서 논리적 사고력과 윤리적 판단력을 요하는 수준이어야 하며, 의학적 지식보다는 잠재력과 가치관을 평가하는 데 초점을 맞춰야 합니다.
+
+출력 포맷:
+TITLE: [제목]
+CONTEXT: [제시문 내용]
+QUESTION_LIST:
+- [질문 1]
+- [질문 2]
+KEY_POINTS:
+- [평가 포인트 1]
+- [평가 포인트 2]
 """
 
 def generate_dynamic_question(api_key, topic):
@@ -26,22 +36,18 @@ def generate_dynamic_question(api_key, topic):
     example = QUESTIONS[example_key]
     
     prompt = f"""
-    [예시 문제 스타일]
+    [예시 문제 스타일 (참고용)]
     제목: {example['title']}
-    내용: {example['context'][:500]}... (생략)
+    내용: {example['context'][:200]}...
     질문: {example['questions']}
     
     위 스타일을 참고하여, '{topic}'에 관한 새로운 문제를 만들어주세요.
-    출력 형식:
-    TITLE: [제목]
-    CONTEXT: [제시문 내용 (300자 이상)]
-    QUESTION: [질문 내용]
-    KEY_POINTS: [평가 핵심 포인트 (3가지)]
+    반드시 위에서 정의한 '출력 포맷'을 정확히 따라주세요.
     """
     
     try:
         response = client.chat.completions.create(
-            model="gpt-4o", # 또는 gpt-3.5-turbo
+            model="gpt-4o", 
             messages=[
                 {"role": "system", "content": GEN_SYSTEM_PROMPT.format(topic=topic)},
                 {"role": "user", "content": prompt}
@@ -53,34 +59,42 @@ def generate_dynamic_question(api_key, topic):
         return {"error": str(e)}
 
 def parse_generated_content(text):
-    # 간단한 파싱 로직 (실제로는 더 견고해야 함)
     data = {"title": "AI 생성 문제", "context": "", "questions": [], "key_points": []}
     try:
         lines = text.split("\n")
         current_section = None
         for line in lines:
-            if "TITLE:" in line:
+            line = line.strip()
+            if not line:
+                continue
+            
+            if line.startswith("TITLE:"):
                 data["title"] = line.replace("TITLE:", "").strip()
-            elif "CONTEXT:" in line:
+                current_section = None
+            elif line.startswith("CONTEXT:"):
                 current_section = "context"
-                data["context"] = line.replace("CONTEXT:", "").strip()
-            elif "QUESTION:" in line:
-                current_section = "question"
-                data["questions"].append(line.replace("QUESTION:", "").strip())
-            elif "KEY_POINTS:" in line:
+                content = line.replace("CONTEXT:", "").strip()
+                if content: data["context"] = content
+            elif line.startswith("QUESTION_LIST:") or line.startswith("QUESTION:"):
+                current_section = "questions"
+            elif line.startswith("KEY_POINTS:"):
                 current_section = "keypoints"
-                data["key_points"].append(line.replace("KEY_POINTS:", "").strip())
             else:
                 if current_section == "context":
                     data["context"] += "\n" + line
-                elif current_section == "question" and line.strip():
-                    data["questions"].append(line.strip())
-                elif current_section == "keypoints" and line.strip():
-                    data["key_points"].append(line.strip())
+                elif current_section == "questions":
+                    # 불릿 포인트나 번호 제거 후 저장
+                    clean_line = line.lstrip("-").lstrip("*").lstrip("0123456789.")
+                    data["questions"].append(clean_line.strip())
+                elif current_section == "keypoints":
+                     data["key_points"].append(line.replace("-", "").strip())
+        
+        # 후처리: Context 줄바꿈 정리
+        data["context"] = data["context"].strip()
         
         return data
-    except:
-        return {"title": "파싱 에러", "context": text, "questions": ["내용을 확인해주세요."], "key_points": []}
+    except Exception as e:
+        return {"title": "파싱 에러", "context": text, "questions": ["질문 생성 중 오류가 발생했습니다."], "key_points": [], "error": str(e)}
 
 def get_ai_response(api_key, messages, personality, question_data, is_last_question=False):
     client = openai.OpenAI(api_key=api_key)
