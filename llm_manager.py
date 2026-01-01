@@ -4,11 +4,18 @@ from questions import QUESTIONS
 
 # 문제 생성 프롬프트
 GEN_SYSTEM_PROMPT = """
-당신은 의대 입시 면접 문제 출제 위원입니다.
+당신은 연세대학교 의과대학 입시 면접 문제 출제 위원입니다.
 제공된 예시 문제(problem.md 스타일)와 유사한 수준, 형식의 '새로운 면접 문제'를 하나 출제해야 합니다.
 형식은 JSON처럼 파싱하기 쉽게 '---' 로 구분하여 [제목/상황], [제시문], [질문] 순서로 출력하세요.
-주제는 {topic} 관련이어야 합니다.
-난이도는 고등학생 수준에서 논리적 사고력과 윤리적 판단력을 요하는 수준이어야 합니다.
+
+주제는 '{topic}' 관련이어야 합니다.
+**특히 가능하다면 다음의 '연세대 의대 특화 키워드'를 문제 상황이나 제시문에 자연스럽게 녹여내세요:**
+1. 중입자 치료 (Heavy Ion Therapy)
+2. 디지털 트랜스포메이션 (Digital Transformation, DX)
+3. 의사-과학자 양성 (Physician-Scientist)
+4. AI 기반 정밀 의료 (AI-based Precision Medicine)
+
+난이도는 고등학생 수준에서 논리적 사고력과 윤리적 판단력을 요하는 수준이어야 하며, 의학적 지식보다는 잠재력과 가치관을 평가하는 데 초점을 맞춰야 합니다.
 """
 
 def generate_dynamic_question(api_key, topic):
