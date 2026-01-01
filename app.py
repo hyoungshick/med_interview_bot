@@ -211,6 +211,10 @@ if not st.session_state.get("evaluation"):
              show_next_button = True
     
     with input_container.container():
+        # Initialize variables to avoid NameError
+        audio_bytes = None
+        user_input_content = None
+
         if show_next_button:
             # [CASE 1] Show Next Question Button (at the bottom, replacing input)
             st.info("💡 답변이 완료되었습니다. 다음 질문으로 넘어가주세요.")
@@ -237,8 +241,10 @@ if not st.session_state.get("evaluation"):
             # 채팅 입력창 바로 위에 오디오 버튼 배치
             st.markdown("### 💬 답변하기")
             
-            audio_bytes = None
-            user_input_content = None
+            st.markdown("### 💬 답변하기")
+            
+            # audio_bytes = None # Removed redundancy
+            # user_input_content = None # Removed redundancy
 
             if HAS_AUDIO:
                 # mic_recorder는 버튼 형태로 렌더링됨
