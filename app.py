@@ -172,7 +172,7 @@ if not st.session_state.messages:
         try:
             # 매번 생성하면 느리거나 비용이 드니 세션에 캐싱하면 좋으나,
             # 여기선 간단히 항상 생성 (또는 이미 생성된 걸 확인 가능하면 좋음)
-            audio_bytes = text_to_speech(api_key, welcome_msg)
+            audio_bytes = text_to_speech(api_key, welcome_msg, voice=current_voice)
             msg_data["audio"] = audio_bytes
         except Exception:
             pass # API 키 오류 등으로 생성 못해도 텍스트는 보여줌
@@ -224,7 +224,7 @@ if not st.session_state.get("evaluation"):
                 
                 if HAS_LLM and api_key:
                     try:
-                        audio_bytes = text_to_speech(api_key, next_msg_text)
+                        audio_bytes = text_to_speech(api_key, next_msg_text, voice=current_voice)
                         msg_data["audio"] = audio_bytes
                     except Exception:
                         pass
@@ -312,7 +312,7 @@ if user_input_content:
                 # 2-2. TTS
                 try:
                     with st.spinner("면접관이 답변을 말하는 중입니다..."):
-                        response_audio = text_to_speech(api_key, response_content)
+                        response_audio = text_to_speech(api_key, response_content, voice=current_voice)
                 except Exception as e:
                     st.error(f"TTS Error: {e}")
             else:

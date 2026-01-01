@@ -131,11 +131,11 @@ def transcribe_audio(api_key, audio_bytes):
     )
     return transcript.text
 
-def text_to_speech(api_key, text):
+def text_to_speech(api_key, text, voice="onyx"):
     client = openai.OpenAI(api_key=api_key)
     response = client.audio.speech.create(
         model="tts-1",
-        voice="onyx", # calm and professional male voice. funny options: alloy, echo, fable, onyx, nova, shimmer
+        voice=voice,
         input=text
     )
     # 스트림 대신 바로 바이트로 반환
