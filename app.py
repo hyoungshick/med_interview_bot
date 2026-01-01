@@ -207,8 +207,11 @@ if not st.session_state.get("evaluation"):
     show_next_button = False
     
     if st.session_state.messages and st.session_state.messages[-1]["role"] == "assistant":
-         if current_idx < total_q - 1:
-             show_next_button = True
+         # Only show if the PREVIOUS message was from user (meaning this assistant message is a response/ack)
+         # Start of interview: [Assistant(Welcome)] -> Len 1. [-2] Index Error.
+         if len(st.session_state.messages) > 1 and st.session_state.messages[-2]["role"] == "user":
+             if current_idx < total_q - 1:
+                 show_next_button = True
     
     with input_container.container():
         # Initialize variables to avoid NameError
@@ -336,6 +339,11 @@ if user_input_content:
     if response_audio:
         msg_data["audio"] = response_audio
     st.session_state.messages.append(msg_data)
+    
+    # Force UI update to show "Next Question" button if applicable
+    # If not the last question, rerun to update the input container state (Input -> Next Button)
+    if current_idx < len(q_data.get('questions', [])) - 1:
+         st.rerun()
 
     # [Auto-Evaluation] 마지막 질문에 대한 답변까지 완료되었는지 확인
     total_q = len(q_data.get('questions', []))
