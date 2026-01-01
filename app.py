@@ -236,25 +236,28 @@ if not st.session_state.get("evaluation"):
         user_input_content = None
 
         if show_next_button:
-            # [CASE 1] Show Next Question Button (at the bottom, replacing input)
-            st.info("💡 답변이 완료되었습니다. 다음 질문으로 넘어가주세요.")
-            if st.button("➡️ 다음 질문으로 넘어가기", use_container_width=True, type="primary"):
-                st.session_state.current_question_index += 1
-                next_q = q_data['questions'][st.session_state.current_question_index]
-                
-                # 다음 질문 메시지 생성
-                next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
-                msg_data = {"role": "assistant", "content": next_msg_text}
-                
-                if HAS_LLM and api_key:
-                    try:
-                        audio_bytes = text_to_speech(api_key, next_msg_text, voice=current_voice)
-                        msg_data["audio"] = audio_bytes
-                    except Exception:
-                        pass
-                
-                st.session_state.messages.append(msg_data)
-                st.rerun()
+            # [CASE 1] Auto-Advance to Next Question (No Button)
+            st.info("⏳ 답변이 완료되었습니다. 잠시 후 다음 질문으로 넘어갑니다...")
+            
+            # Give user time to read/hear the acknowledgement
+            time.sleep(3)
+            
+            st.session_state.current_question_index += 1
+            next_q = q_data['questions'][st.session_state.current_question_index]
+            
+            # 다음 질문 메시지 생성
+            next_msg_text = f"다음 질문 드리겠습니다.\n\n{next_q}"
+            msg_data = {"role": "assistant", "content": next_msg_text}
+            
+            if HAS_LLM and api_key:
+                try:
+                    audio_bytes = text_to_speech(api_key, next_msg_text, voice=current_voice)
+                    msg_data["audio"] = audio_bytes
+                except Exception:
+                    pass
+            
+            st.session_state.messages.append(msg_data)
+            st.rerun()
         
         else:
             # [CASE 2] Show Input Controls (Audio/Text)
