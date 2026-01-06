@@ -5,15 +5,21 @@ import sys
 # Try to find API Key from environment or secrets
 api_key = os.environ.get("OPENAI_API_KEY")
 if not api_key:
-    # Try loading from secrets.toml if streamlit is installed
+    # Try loading from secrets.toml
     try:
-        import toml
-        secrets_path = os.path.join(".streamlit", "secrets.toml")
-        if os.path.exists(secrets_path):
-            with open(secrets_path, "r", encoding="utf-8") as f:
+        import tomllib # Python 3.11+
+        with open(os.path.join(".streamlit", "secrets.toml"), "rb") as f:
+            secrets = tomllib.load(f)
+            api_key = secrets.get("OPENAI_API_KEY")
+    except ImportError:
+        try:
+            import toml
+            with open(os.path.join(".streamlit", "secrets.toml"), "r", encoding="utf-8") as f:
                 secrets = toml.load(f)
                 api_key = secrets.get("OPENAI_API_KEY")
-    except ImportError:
+        except ImportError:
+            pass
+    except FileNotFoundError:
         pass
 
 if not api_key:
@@ -24,12 +30,19 @@ if not api_key:
 from llm_manager import generate_dynamic_question
 
 def test_generation():
-    topic = "의료 소송과 방어 진료"
-    print(f"Generating question for topic: {topic}...")
-    print("This may take 30-60 seconds...")
-    
-    result = generate_dynamic_question(api_key, topic)
-    
+    # Test 1: Science Mode
+    topic_science = "CRISPR 유전자 가위의 부작용"
+    print(f"\n[Test 1] Generating SCIENCE question for: {topic_science}...")
+    result_science = generate_dynamic_question(api_key, topic_science, mode="science")
+    print_result(result_science)
+
+    # Test 2: Ethics Mode
+    topic_ethics = "안락사 허용 논란"
+    print(f"\n[Test 2] Generating ETHICS question for: {topic_ethics}...")
+    result_ethics = generate_dynamic_question(api_key, topic_ethics, mode="ethics")
+    print_result(result_ethics)
+
+def print_result(result):
     if "error" in result:
         print(f"Error: {result['error']}")
         return
@@ -41,19 +54,15 @@ def test_generation():
     context = result.get('context', '')
     print(f"\nCONTEXT LENGTH: {len(context)} chars")
     print("-" * 20)
-    print(context[:500] + "\n... (omitted) ...\n" + context[-200:])
+    print(context[:300] + "\n... (omitted) ...\n" + context[-300:])
     print("-" * 20)
     
     print("\nQUESTIONS:")
     for q in result.get('questions', []):
         print(f" - {q}")
         
-    print("\nKEY POINTS:")
-    for k in result.get('key_points', []):
-        print(f" - {k}")
-
     if len(context) > 800:
-        print("\n✅ PASS: Context length is sufficient (> 800 chars).")
+        print("\n✅ PASS: Context length is sufficient.")
     else:
         print("\n⚠️ WARNING: Context length might be too short.")
 

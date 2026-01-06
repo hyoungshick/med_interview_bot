@@ -2,75 +2,111 @@ import openai
 import os
 from questions import QUESTIONS
 
-# 문제 생성 프롬프트
-GEN_SYSTEM_PROMPT = """
+# [공통] 문제 생성 시스템 프롬프트 (기본 설정)
+BASE_SYSTEM_PROMPT = """
 당신은 대한민국 최상위권 의과대학(연세대, 서울대 등)의 입시 면접 문제 출제 위원입니다.
-지원자의 '비판적 사고력', '윤리적 판단력', '논리적 추론 능력'을 심층적으로 평가할 수 있는 **고난도 심층 면접 문제**를 출제해야 합니다.
+지원자의 '비판적 사고력', '논리적 추론 능력', '심층적 분석력'을 평가하기 위한 **최고 난이도의 면접 문제**를 출제합니다.
+
+**[핵심 원칙: 추론형 문제 (Inferential Logic)]**
+- **정답을 제시문에 직접 쓰지 마십시오.**
+- 대신, 정답을 유추할 수 있는 **'현상', '실험 데이터', '사례', '관련 이론의 파편'**들만 제시하십시오.
+- 지원자가 이 파편들을 조합하고 논리적으로 연결해야만 답안을 구성할 수 있어야 합니다.
+- 제시문은 설명문이 아니라 **Raw Data(날것의 자료)**에 가까워야 합니다.
 
 **[출제 지침]**
-1. **제시문(CONTEXT)의 깊이와 길이 강화**:
-   - 제시문은 단순한 상황 설명이 아니라, 사회적/윤리적/과학적 딜레마가 복합적으로 얽힌 **긴 글(Long Context)**이어야 합니다.
-   - 최소 **1000자 이상**의 분량을 목표로 하세요.
-   - 제시문은 [가], [나], [다]와 같이 **다양한 관점(상반된 주장, 법적 근거, 과학적 데이터, 철학적 사상 등)**을 포함한 여러 단락으로 구성하세요.
-   - 제시문 사이에는 **반드시 두 번 이상의 줄바꿈**을 넣어 시각적으로 명확히 구분하세요.
+1. **Context(제시문) 구성**:
+   - 분량: 최소 **1000자 이상**.
+   - 구조: [가], [나], [다] 등 3개 이상의 단락으로 구성하며, 각 단락은 서로 다른 관점이나 데이터를 제공해야 합니다.
+   - 단락 간 줄바꿈(2번) 필수.
 
-2. **질문의 수준 상향**:
-   - 단순한 찬반이나 지식 확인이 아닌, 제시문 간의 관계를 파악하고 논리적으로 통합해야 답변할 수 있는 복합 질문을 만드세요.
-   - 특정 상황에서의 대처 능력과 그 근거를 집요하게 묻는 질문을 포함하세요.
-
-3. **출력 형식 준수**:
-   - 파싱을 위해 각 섹션을 '---' 또는 명확한 헤더(TITLE:, CONTEXT: 등)로 구분하세요.
+2. **출력 형식**:
+   - 파싱을 위해 구분자('---') 또는 헤더(TITLE:, CONTEXT: 등)를 명확히 사용.
 
 출력 포맷:
 TITLE: [고난도] 제목
 CONTEXT: 
 ### [제시문 가]
-(상세하고 긴 내용...)
+(상세 내용...)
 
 ### [제시문 나]
-(상세하고 긴 내용...)
+(상세 내용...)
 
 ### [제시문 다]
-(상세하고 긴 내용...)
+(상세 내용...)
 
 QUESTION_LIST:
-- [질문 1] ...
-- [질문 2] ...
+- [질문 1]
+- [질문 2]
 
 KEY_POINTS:
 - [평가 포인트 1]
 - [평가 포인트 2]
 """
 
-def generate_dynamic_question(api_key, topic):
+# [Mode 1] 인성/시사/윤리 (Part 1 style)
+GEN_SYSTEM_PROMPT_ETHICS = BASE_SYSTEM_PROMPT + """
+**[Mode: 인성 및 가치관 (Ethics & Values)]**
+- **주제**: 의료 윤리, 사회적 딜레마, 의사소통 갈등, 의료 정책.
+- **작성 요령**:
+  - 명확한 선악이 없는 복잡한 딜레마 상황을 부여하세요.
+  - 한 쪽의 입장만 옹호하기 어려운, 양립 불가능한 가치들이 충돌하게 만드세요.
+  - 예: "환자의 자율성 vs 의사의 선의의 간섭주의", "공리주의적 자원 배분 vs 소수자 보호"
+"""
+
+# [Mode 2] 과학적 사고력 (Part 2 style)
+GEN_SYSTEM_PROMPT_SCIENCE = BASE_SYSTEM_PROMPT + """
+**[Mode: 과학적 사고력 (Scientific Reasoning)]**
+- **주제**: 생명과학(Biology), 화학(Chemistry), 물리(Physics) 원리의 의학적 응용.
+- **작성 요령**:
+  - **반드시 실험 결과, 연구 데이터, 그래프 해석(텍스트 묘사)을 포함하세요.**
+  - 현상을 설명하는 과학적 원리(예: 효소 반응 속도, 유체 역학, 압력 차이)를 직접 설명하지 말고, **실험 조건과 결과만** 제시하세요.
+  - 지원자가 제시된 결과를 보고 원리를 '역추적'하거나, 새로운 상황에 '적용'하는 질문을 던지세요.
+  - 예: "약물 A 투여 시 그래프 변화가 [가]와 같다. 제시문 [나]의 세포 기작을 바탕으로 그 원인을 추론하시오."
+"""
+
+def generate_dynamic_question(api_key, topic, mode="ethics"):
     client = openai.OpenAI(api_key=api_key)
     
+    # 모드에 따른 프롬프트 선택
+    if mode == "science":
+        system_prompt = GEN_SYSTEM_PROMPT_SCIENCE
+        prompt_instruction = f"""
+        주제 '{topic}'에 대해 **과학적 추론 능력**을 평가하는 문제를 출제하세요.
+        생명과학/화학/물리 지식을 기반으로 한 **실험 데이터나 도표 해석(텍스트로 묘사)**을 반드시 제시문에 포함하세요.
+        """
+    else:
+        system_prompt = GEN_SYSTEM_PROMPT_ETHICS
+        prompt_instruction = f"""
+        주제 '{topic}'에 대해 **윤리적 딜레마/가치관**을 평가하는 심층면접 문제를 출제하세요.
+        상반된 입장의 근거들을 제시문 [가], [나], [다]에 분산 배치하세요.
+        """
+    
     # 예시 데이터 가져오기 (Few-shot)
-    # 기출 문제 중 하나를 랜덤이나 고정으로 가져와서 스타일 참고용으로 제시
-    # 컨텍스트를 자르지 않고 전체를 다 보여줌으로써 모델이 길이감을 익히게 함
     example_key = list(QUESTIONS.keys())[0] 
     example = QUESTIONS[example_key]
     
     prompt = f"""
-    [참고할 기출 문제 스타일 (Few-shot Example)]
+    [참고할 기출 문제 스타일]
     제목: {example['title']}
     내용: {example['context']} 
     질문: {example['questions']}
     
     위 예시와 같이 **호흡이 길고 깊이 있는** 문제를 출제하세요.
-    주제: '{topic}'
     
-    **반드시 제시문은 [가], [나] 등을 포함하여 매우 풍부하게 작성되어야 합니다.**
+    [요청 사항]
+    {prompt_instruction}
+    
+    **중요: '답'을 직접 알려주지 말고, '단서'만 제시하세요. 지원자가 스스로 연결해야 합니다.**
     """
     
     try:
         response = client.chat.completions.create(
             model="gpt-4o", 
             messages=[
-                {"role": "system", "content": GEN_SYSTEM_PROMPT},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7 # 창의성과 다양성을 위해 약간 높임
+            temperature=0.7 
         )
         content = response.choices[0].message.content
         return parse_generated_content(content)

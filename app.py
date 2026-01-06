@@ -117,13 +117,29 @@ with st.sidebar:
             st.rerun()
             
     with tab2:
-        new_topic = st.text_input("생성할 문제 주제:", placeholder="예: 의료 인공지능, 안락사 등")
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            mode_selection = st.radio(
+                "문제 유형 선택:",
+                ["인성 및 가치관 (Part 1)", "과학적 사고력 (Part 2)"],
+                index=0
+            )
+            # 맵핑
+            mode_map = {
+                "인성 및 가치관 (Part 1)": "ethics",
+                "과학적 사고력 (Part 2)": "science"
+            }
+            selected_mode = mode_map[mode_selection]
+            
+        with col2:
+            new_topic = st.text_input("생성할 문제 주제:", placeholder="예: 유전자 가위, AI 의료, 안락사 등")
+        
         if st.button("새로운 문제 생성 (AI)"):
             if not api_key:
                 st.error("API Key를 먼저 입력해주세요.")
             else:
-                with st.spinner("AI가 기출 문제를 분석하여 새로운 문제를 출제 중입니다..."):
-                    generated_q = generate_dynamic_question(api_key, new_topic)
+                with st.spinner(f"AI가 '{mode_selection}' 유형의 심층 문제를 출제 중입니다..."):
+                    generated_q = generate_dynamic_question(api_key, new_topic, mode=selected_mode)
                     if "error" in generated_q:
                         st.error(f"생성 실패: {generated_q['error']}")
                     else:
