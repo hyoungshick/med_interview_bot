@@ -119,15 +119,15 @@ with st.sidebar:
     with tab2:
         col1, col2 = st.columns([1, 2])
         with col1:
-            mode_selection = st.radio(
-                "문제 유형 선택:",
-                ["인성 및 가치관 (Part 1)", "과학적 사고력 (Part 2)"],
+            mode_selection = st.selectbox(
+                "문제 유형:",
+                ["인성/가치관 (Part 1)", "과학/사고력 (Part 2)"],
                 index=0
             )
             # 맵핑
             mode_map = {
-                "인성 및 가치관 (Part 1)": "ethics",
-                "과학적 사고력 (Part 2)": "science"
+                "인성/가치관 (Part 1)": "ethics",
+                "과학/사고력 (Part 2)": "science"
             }
             selected_mode = mode_map[mode_selection]
             
