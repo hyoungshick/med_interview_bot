@@ -117,7 +117,6 @@ with st.sidebar:
             st.rerun()
             
     with tab2:
-    with tab2:
         col1, col2 = st.columns([1, 2.5])
         with col1:
             mode_selection = st.selectbox(
