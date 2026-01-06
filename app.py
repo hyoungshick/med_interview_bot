@@ -117,22 +117,28 @@ with st.sidebar:
             st.rerun()
             
     with tab2:
-        col1, col2 = st.columns([1, 2])
+    with tab2:
+        col1, col2 = st.columns([1, 2.5])
         with col1:
             mode_selection = st.selectbox(
                 "문제 유형:",
-                ["인성/가치관 (Part 1)", "과학/사고력 (Part 2)"],
+                ["인성/가치관", "과학적 사고력"],
                 index=0
             )
             # 맵핑
             mode_map = {
-                "인성/가치관 (Part 1)": "ethics",
-                "과학/사고력 (Part 2)": "science"
+                "인성/가치관": "ethics",
+                "과학적 사고력": "science"
             }
             selected_mode = mode_map[mode_selection]
             
         with col2:
-            new_topic = st.text_input("생성할 문제 주제:", placeholder="예: 유전자 가위, AI 의료, 안락사 등")
+            if selected_mode == "science":
+                ph_text = "예: CRISPR 부작용, 효소 반응 속도, 도플러 효과 등"
+            else:
+                ph_text = "예: 의사 파업, 안락사, 의료 자원 배분 등"
+                
+            new_topic = st.text_input("생성할 문제 주제:", placeholder=ph_text)
         
         if st.button("새로운 문제 생성 (AI)"):
             if not api_key:
